@@ -1,0 +1,56 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/pvc-globals/pvc-globals.html">
+<link rel="import" href="../bower_components/pvc-spinner/pvc-spinner.html">
+<link rel="import" href="../bower_components/core-header-panel/core-header-panel.html">
+<link rel="import" href="../bower_components/core-toolbar/core-toolbar.html">
+<link rel="import" href="../bower_components/core-animated-pages/core-animated-pages.html">
+<link rel="import" href="../bower_components/core-animated-pages/transitions/slide-up.html">
+<link rel="import" href="../bower_components/core-animated-pages/transitions/slide-down.html">
+<link rel="import" href="../bower_components/core-animated-pages/transitions/scale-up.html">
+
+<polymer-element name="game-client">
+  <template>
+    <style>
+      pvc-spinner {
+        zoom: 1.5;
+      }
+      
+      core-toolbar {
+        background: #333;
+        color: white;
+      }
+    </style>
+  
+    <pvc-globals id='globals' values="{{globals}}"></pvc-globals>
+    <firebase-element location="{{globals.db}}/games/{{globals.gameId}}" data="{{game}}"></firebase-element>
+    
+    <core-animated-pages id="pages" valueattr="id" transitions="cross-fade slide-up slide-down scale-up" selected="no-game" fit layout vertical>
+      <section id="no-game" flex layout vertical center center-justified>
+        <pvc-spinner type="cube-grid" scale-up></pvc-spinner>
+      </section>
+      <section id="game-present" flex layout vertical>
+        <core-header-panel flex mode="waterfall">
+          <core-toolbar slide-down>{{game.name}}</core-toolbar>
+          <div slide-up>
+            <template ref="{{'game-' + (game.status || 'error')}}"></template>
+          </div>
+        </core-header-panel>
+      </section>
+    </core-animated-pages>
+    
+    <template id='game-error'>
+      The game has no status. That's never a good thing.
+    </template>
+  </template>
+  <script>
+    Polymer('game-client', {
+      gameChanged: function() {
+        if (this.game) {
+          this.$.pages.selected = 'game-present';
+        } else {
+          this.$.pages.selected = 'no-game';
+        }
+      }
+    });
+  </script>
+</polymer-element>

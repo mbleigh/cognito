@@ -1,0 +1,40 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/pvc-globals/pvc-globals.html">
+<link rel="import" href="../bower_components/core-animated-pages/core-animated-pages.html">
+<link rel="import" href="../bower_components/core-animated-pages/transitions/slide-from-right.html">
+
+<link rel="import" href="game-client.html">
+<link rel="import" href="game-list.html">
+
+<polymer-element name="game-app">
+  
+  <template>
+    <pvc-globals values="{{app}}"></pvc-globals>
+    
+    <core-animated-pages id="pages" valueattr="id" transitions="cross-fade slide-from-right" fit layout vertical>
+      <section id="list" flex>
+        <game-list cross-fade></game-list>
+      </section>
+      <section id="client" flex>
+        <game-client slide-from-right></game-client>
+      </section>
+    </core-animated-pages>
+  </template>
+  <script>
+    Polymer('game-app', {
+      observe: {
+        'app.gameId': 'gameIdChanged'
+      },
+      ready: function() {
+        this.app.db = (__env && __env['FIREBASE_URL']) ? __env['FIREBASE_URL'] : 'https://cognito-game.firebaseio.com';
+        this.app.game = null;
+        
+        var match = window.location.pathname.match('^/games/([^/]+)$')
+        if (match) { this.app.gameId = match[1]; }
+      },
+      gameIdChanged: function() {
+        this.$.pages.selected = this.app.gameId ? 'client' : 'list';
+      }
+    });
+  </script>
+</polymer-element>

@@ -1,0 +1,44 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/core-list/core-list.html">
+<link rel="import" href="../bower_components/firebase-element/firebase-element.html">
+
+<polymer-element name="game-list">
+  <template>
+    <pvc-globals values="{{globals}}"></pvc-globals>
+    <firebase-element id="gamesRef" location="{{globals.db}}/games" data="{{games}}" keys="{{keys}}"></firebase-element>
+    
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <template if="{{keys.length > 0}}">
+      <section id="list">
+        <template repeat="{{key in keys}}">
+          <div class="game" on-tap="{{joinGame}}" data-game="{{key}}">
+            <span class='name'>{{games[key].name}}</span>
+            <span class='type'>{{games[key].type}}</span>
+          </div>
+        </template>
+      </section>
+    </template>
+    <template if="{{keys.length == 0}}">
+      <section id="welcome">
+        <p>Welcome to the <b>Cognito Corporation</b> volunteer test subject program.</p>
+      </section>
+    </template>
+    <div on-click="{{createGame}}">Host Experiment</div>
+  </template>
+  <script>
+    Polymer({
+      createGame: function() {
+        alert("CREATING GAME");
+        this.$.gamesRef.push({name: 'Game ' + Math.ceil(Math.random() * 100)});
+      },
+      joinGame: function(e) {
+        history.pushState({}, '', "/games/" + e.currentTarget.dataset.game);
+        this.globals.gameId = e.currentTarget.dataset.game;
+      }
+    });
+  </script>
+</polymer-element>
