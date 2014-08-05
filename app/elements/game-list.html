@@ -1,15 +1,26 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/core-list/core-list.html">
 <link rel="import" href="../bower_components/firebase-element/firebase-element.html">
+<link rel="import" href="../bower_components/firebase-element/firebase-login.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
 
 <polymer-element name="game-list">
   <template>
-    <pvc-globals values="{{globals}}"></pvc-globals>
-    <firebase-element id="gamesRef" location="{{globals.db}}/games" data="{{games}}" keys="{{keys}}"></firebase-element>
+    <pvc-globals values="{{app}}"></pvc-globals>
+    <firebase-element id="gamesRef" location="{{app.db}}/games" data="{{games}}" keys="{{keys}}"></firebase-element>
+    <firebase-login location="https://cognito-game.firebaseio.com" id="login" on-login="{{handleLogin}}"></firebase-login>
     
     <style>
       :host {
         display: block;
+      }
+      paper-button {
+        display: block;
+        background: #333;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        margin: 10px;
       }
     </style>
     <template if="{{keys.length > 0}}">
@@ -27,17 +38,29 @@
         <p>Welcome to the <b>Cognito Corporation</b> volunteer test subject program.</p>
       </section>
     </template>
-    <div on-click="{{createGame}}">Host Experiment</div>
+    <paper-button on-tap="{{createGame}}" label="Begin New Experiment"/>
   </template>
   <script>
     Polymer({
       createGame: function() {
-        alert("CREATING GAME");
-        this.$.gamesRef.push({name: 'Game ' + Math.ceil(Math.random() * 100)});
+        if (this.app.user || this.$.login.user) {
+          var displayName = this.app.user.thirdPartyUserData.first_name + ' ' + this.app.user.thirdPartyUserData.last_name.substr(0,1) + '.';
+          this.$.gamesRef.push({
+            host: this.app.user.uid,
+            name: displayName,
+            status: 'lobby',
+            players: [{id: this.app.user.uid, name: displayName}]
+          });
+        } else {
+          this.$.login.login('facebook');
+        }
       },
       joinGame: function(e) {
         history.pushState({}, '', "/games/" + e.currentTarget.dataset.game);
-        this.globals.gameId = e.currentTarget.dataset.game;
+        this.app.gameId = e.currentTarget.dataset.game;
+      },
+      handleLogin: function() {
+        this.app.user = this.$.login.user;
       }
     });
   </script>
