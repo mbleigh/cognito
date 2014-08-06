@@ -29,8 +29,17 @@
         this.app.db = (__env && __env['FIREBASE_URL']) ? __env['FIREBASE_URL'] : 'https://cognito-game.firebaseio.com';
         this.app.game = null;
         
+        this.route();
+        
+        window.addEventListener('popstate', this.route.bind(this));
+      },
+      route: function() {
         var match = window.location.pathname.match('^/games/([^/]+)$')
-        if (match) { this.app.gameId = match[1]; }
+        if (match) {
+          this.app.gameId = match[1]; 
+        } else {
+          this.app.gameId = null;
+        }
       },
       gameIdChanged: function() {
         this.$.pages.selected = this.app.gameId ? 'client' : 'list';

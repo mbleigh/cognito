@@ -3,11 +3,12 @@
 <link rel="import" href="../bower_components/firebase-element/firebase-element.html">
 <link rel="import" href="../bower_components/firebase-element/firebase-login.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/core-icons/core-icons.html">
 
 <polymer-element name="game-list">
   <template>
     <pvc-globals values="{{app}}"></pvc-globals>
-    <firebase-element id="gamesRef" location="{{app.db}}/games" data="{{games}}" keys="{{keys}}"></firebase-element>
+    <firebase-element id="gamesRef" location="{{app.db}}/games" data="{{games}}" keys="{{keys}}" childEvents on-child-added="{{gameAdded}}"></firebase-element>
     <firebase-login location="https://cognito-game.firebaseio.com" id="login" on-login="{{handleLogin}}"></firebase-login>
     
     <style>
@@ -20,25 +21,75 @@
         color: white;
         font-weight: bold;
         text-align: center;
+        margin: 20px 10px 10px;
+        font-size: 1.2em;
+      }
+      .game {
+        border: 1px solid #333;
         margin: 10px;
+        padding: 10px 15px 10px;
+        font-size: 1.1em;
+        cursor: pointer;
+        border-radius: 2px;
+      }
+      .game span {
+        display: inline-block;
+      }
+      .game .name {
+        font-size: 1.3em;
+        font-weight: bold;
+      }
+      .game .players {
+        background: #333;
+        border-radius: 50%;
+        color: white;
+        text-align: center;
+        font-weight: bold;
+        width: 26px;
+        height: 26px;
+        line-height: 26px;
+      }
+      
+      #welcome {
+        padding: 5px 20px;
+        margin: 10px;
+        border: 1px solid #333;
+        border-radius: 3px;
+        font-size: 1.2em;
+        text-align: justify;
+      }
+      
+      #logo {
+        margin: 20px 0;
+        text-align: center;
       }
     </style>
-    <template if="{{keys.length > 0}}">
+    <div id="logo">
+      <core-icon id="logo" icon="work" size="100"></core-icon>
+    </div>
+    <template if="{{games && keys.length > 0}}">
       <section id="list">
         <template repeat="{{key in keys}}">
-          <div class="game" on-tap="{{joinGame}}" data-game="{{key}}">
-            <span class='name'>{{games[key].name}}</span>
-            <span class='type'>{{games[key].type}}</span>
+          <div class="game" on-tap="{{gameTapped}}" data-game="{{key}}" layout horizontal>
+            <span class='name' flex>{{games[key].name}}</span>
+            <span class='players'>{{games[key].players.length}}</span>
           </div>
         </template>
       </section>
     </template>
-    <template if="{{keys.length == 0}}">
+    <template if="{{!games || !keys || keys.length === 0}}">
       <section id="welcome">
-        <p>Welcome to the <b>Cognito Corporation</b> volunteer test subject program.</p>
+        <p>Welcome to the <b>Cognito Corporation</b> volunteer test subject
+        program. We could not find any active experiments in your location.
+        We encourage you to join our Ready And Willing Manual Experiment
+        Attenutation Training program by tapping the button below.</p>
+        
+        <p><small>Cognito Corporation is not responsible for any psychological
+        damage, injury, or fatality that occurs as a result of R.A.W.M.E.A.T.
+        experiments.</small></p>
       </section>
     </template>
-    <paper-button on-tap="{{createGame}}" label="Begin New Experiment"/>
+    <paper-button on-tap="{{createGame}}" label="Host New Experiment"/>
   </template>
   <script>
     Polymer({
@@ -50,17 +101,38 @@
             name: displayName,
             status: 'lobby',
             players: [{id: this.app.user.uid, name: displayName}]
+          }, function() {
+            
           });
         } else {
+          this.createOnLogin = true;
           this.$.login.login('facebook');
         }
       },
-      joinGame: function(e) {
-        history.pushState({}, '', "/games/" + e.currentTarget.dataset.game);
-        this.app.gameId = e.currentTarget.dataset.game;
+      joinGame: function(gameId) {
+        history.pushState({}, '', "/games/" + gameId);
+        this.app.gameId = gameId;
       },
       handleLogin: function() {
         this.app.user = this.$.login.user;
+        if (this.createOnLogin) {
+          this.createOnLogin = false;
+          return this.createGame();
+        }
+        
+        for(gameId in this.games) {
+          if (this.games[gameId].host === this.app.user.uid) {
+            this.joinGame(gameId);
+          }
+        }
+      },
+      gameTapped: function(e) {
+        this.joinGame(e.currentTarget.dataset.game);
+      },
+      gameAdded: function(e, snapshot) {
+        if (this.app.user && snapshot.value.host === this.app.user.uid) {
+          this.joinGame(snapshot.name);
+        }
       }
     });
   </script>
